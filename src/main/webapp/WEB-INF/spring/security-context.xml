@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+    xmlns:beans="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+                        ">
+                        
+    <http pattern="/favicon.ico" security="none"/>
+    <http pattern="/resources/**" security="none"/>
+    <http pattern="/**.png" security="none"/>
+    <http pattern="/**.jpg" security="none"/>
+    <http pattern="/**.gif" security="none"/>
+    <http use-expressions="true" once-per-request="false">
+    	<custom-filter ref="jdbcFilterSecurityInterceptor" before="FILTER_SECURITY_INTERCEPTOR"/>
+        <intercept-url pattern="/school/**" access="isAuthenticated()" />
+        <intercept-url pattern="/**" access="permitAll" />
+        <form-login/>
+        <logout logout-url="/logout" logout-success-url="/" delete-cookies="JSESSIONID"/>
+        <remember-me key="214091sfjhosdijf098123r"/>
+    </http>  
+    <authentication-manager alias="authenticationManager">
+        <authentication-provider>
+            <user-service>
+                <user name="member" password="member" authorities="member" />
+                <user name="user" password="user" authorities="user" />
+            </user-service>
+        </authentication-provider>
+    </authentication-manager>
+	<beans:bean id="jdbcSecurityMetadataSource" 
+		class="org.springcamp.security.infra.JdbcExpressionFilterInvocationDefinitionSourceFactoryBean">
+		<beans:constructor-arg index="0">
+			<beans:bean class="org.springcamp.security.infra.AuthorizationMetaService">
+				<beans:property name="jdbc" ref="jdbcTemplate"/>
+				<beans:property name="resourceQuery" value="
+					SELECT   PATH, EXPRESSION, NULL
+					FROM     AUTH_META
+					ORDER BY ORDERING, ID
+				"/>
+			</beans:bean>
+		</beans:constructor-arg>
+	</beans:bean>
+	<beans:bean id="jdbcFilterSecurityInterceptor" 
+		class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor" 
+		parent="org.springframework.security.web.access.intercept.FilterSecurityInterceptor#0">
+		<beans:property name="securityMetadataSource" ref="jdbcSecurityMetadataSource"/>
+	</beans:bean>    
+</beans:beans>
